@@ -1,74 +1,86 @@
 version: "3.7"
 
 services:
-  db:
-    image: mysql:5.7
-    volumes:
-      - mysqldata:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ${APP_DATABASE}
-      MYSQL_USER: ${APP_USER}
-      MYSQL_PASSWORD: ${APP_PASSWORD}
-    networks:
-      - springRestful
-  api:
-    image: gradle:jdk11
-    entrypoint: gradle --project-cache-dir /tmp/gradle-cache bootRun
-    depends_on:
-      - db
-    restart: unless-stopped
-    volumes:
-      - ./api:/api
-    working_dir: /api
-    ports:
-      - ${API_PORT}:8080
-    networks:
-      - springRestful
+    db:
+        image: mysql:5.7
+        volumes:
+            - mysqldata:/var/lib/mysql
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            MYSQL_ROOT_PASSWORD: api
+            MYSQL_DATABASE: ${APP_DATABASE}
+            MYSQL_USER: ${APP_USER}
+            MYSQL_PASSWORD: ${APP_PASSWORD}
+        ports:
+            - "3386:3306"
+        networks:
+            - springRestful
+    api:
+        image: gradle:jdk11
+        entrypoint: gradle --project-cache-dir /tmp/gradle-cache bootRun
+        environment:
+            - DATABASE_HOST=db
+        depends_on:
+            - db
+        restart: unless-stopped
+        volumes:
+            - ./api:/api
+        working_dir: /api
+        links:
+            - db
+        ports:
+            - ${API_PORT}:8080
+        networks:
+            - springRestful
 
-  api_reload:
-    image: gradle:jdk11
-    entrypoint: gradle --project-cache-dir /tmp/gradle-cache --continuous classes
-    restart: unless-stopped
-    volumes:
-      - ./api:/api
-    working_dir: /api
+    api_reload:
+        image: gradle:jdk11
+        entrypoint: gradle --project-cache-dir /tmp/gradle-cache --continuous classes
+        restart: unless-stopped
+        volumes:
+            - ./api:/api
+        working_dir: /api
+        links:
+            - db
+        networks:
+            - springRestful
 
-  keycloakdb:
-    image: mysql:5.7
-    volumes:
-      - keycloakdata:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ${KEYCLOAK_DB_NAME}
-      MYSQL_USER: ${KEYCLOAK_DB_USER}
-      MYSQL_PASSWORD: ${KEYCLOAK_DB_PASS}
-    networks:
-      - springRestful
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    depends_on:
-      - keycloakdb
-    environment:
-      DB_VENDOR: MYSQL
-      DB_ADDR: keycloakdb
-      DB_DATABASE: ${KEYCLOAK_DB_NAME}
-      DB_USER: ${KEYCLOAK_DB_USER}
-      DB_PASSWORD: ${KEYCLOAK_DB_PASS}
-      KEYCLOAK_USER: ${KEYCLOAK_UI_USER}
-      KEYCLOAK_PASSWORD: ${KEYCLOAK_UI_PASS}
-    ports:
-      - ${KEYCLOAK_PORT}:8080
-    networks:
-      - springRestful
+    # keycloakdb:
+    #     image: mysql:5.7
+    #     volumes:
+    #         - keycloakdata:/var/lib/mysql
+    #     environment:
+    #         MYSQL_ROOT_PASSWORD: root
+    #         MYSQL_DATABASE: ${KEYCLOAK_DB_NAME}
+    #         MYSQL_USER: ${KEYCLOAK_DB_USER}
+    #         MYSQL_PASSWORD: ${KEYCLOAK_DB_PASS}
+    #     networks:
+    #         - springRestful
+
+    # keycloak:
+    #     image: quay.io/keycloak/keycloak:latest
+    #     depends_on:
+    #         - keycloakdb
+    #     environment:
+    #         DB_VENDOR: MYSQL
+    #         DB_ADDR: keycloakdb
+    #         DB_DATABASE: ${KEYCLOAK_DB_NAME}
+    #         DB_USER: ${KEYCLOAK_DB_USER}
+    #         DB_PASSWORD: ${KEYCLOAK_DB_PASS}
+    #         KEYCLOAK_USER: ${KEYCLOAK_UI_USER}
+    #         KEYCLOAK_PASSWORD: ${KEYCLOAK_UI_PASS}
+    #     ports:
+    #         - ${KEYCLOAK_PORT}:8080
+    #     networks:
+    #         - springRestful
 
 volumes:
-  mysqldata:
-    driver: local
-  keycloakdata:
-    driver: local
+    mysqldata:
+        driver: local
+    keycloakdata:
+        driver: local
 
 networks:
-  springRestful:
-    driver: bridge
+    springRestful:
+        driver: bridge

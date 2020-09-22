@@ -41,3 +41,5 @@ node_modules/
 .env.local
 .env.*.local
 docker-compose.overrides.yml
+api/bin
+api/build

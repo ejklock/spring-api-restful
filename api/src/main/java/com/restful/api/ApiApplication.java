@@ -1,9 +1,15 @@
 package com.restful.api;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
 
+@EntityScan("com.restful.domain")
 @SpringBootApplication
+@EnableAutoConfiguration
+@ComponentScan
 public class ApiApplication {
 
 	public static void main(String[] args) {
